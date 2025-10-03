@@ -45,6 +45,8 @@ jobs:
           node-version: '18'
       - name: Install dependencies
         run: npm install
+      - name: Install Vite (if missing)
+        run: npm install --save-dev vite
       - name: Build frontend
         run: npx vite build
       - name: Run frontend tests (if available)
