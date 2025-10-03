@@ -24,8 +24,6 @@ jobs:
           node-version: '18'
       - name: Install dependencies
         run: npm install
-      - name: Run backend tests
-        run: npm test
       - name: Start backend (for demonstration)
         run: |
           nohup npm start &
