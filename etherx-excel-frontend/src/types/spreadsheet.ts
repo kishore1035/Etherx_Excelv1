@@ -34,6 +34,7 @@ export interface SparklineData {
 
 export interface Sheet {
   id: string;
+  _id?: string; // Backend ID
   name: string;
   color?: string;
   cells: Map<string, Cell>;
@@ -66,4 +67,5 @@ export interface User {
   name: string;
   email: string;
   phone?: string;
+  token?: string; // Auth token for backend
 }

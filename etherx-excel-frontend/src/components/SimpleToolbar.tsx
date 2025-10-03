@@ -185,13 +185,10 @@ export function SimpleToolbar({
             <TooltipTrigger asChild>
               <ColorPalette value={currentTextColor} onChange={onTextColor}>
                 <Button variant="ghost" size="icon">
-                  <div className="relative">
-                    <Type className="w-4 h-4" />
-                    <div
-                      className="absolute bottom-0 left-0 right-0 h-1 rounded"
-                      style={{ backgroundColor: currentTextColor || "#000000" }}
-                    />
-                  </div>
+                    <div className="relative">
+                      <Type className="w-4 h-4" />
+                      <div className="absolute bottom-0 left-0 right-0 h-1 rounded text-color-bar" />
+                    </div>
                 </Button>
               </ColorPalette>
             </TooltipTrigger>
@@ -202,13 +199,10 @@ export function SimpleToolbar({
             <TooltipTrigger asChild>
               <ColorPalette value={currentFillColor} onChange={onFillColor}>
                 <Button variant="ghost" size="icon">
-                  <div className="relative">
-                    <Paintbrush className="w-4 h-4" />
-                    <div
-                      className="absolute bottom-0 left-0 right-0 h-1 rounded"
-                      style={{ backgroundColor: currentFillColor || "#FFFFFF" }}
-                    />
-                  </div>
+                    <div className="relative">
+                      <Paintbrush className="w-4 h-4" />
+                      <div className="absolute bottom-0 left-0 right-0 h-1 rounded fill-color-bar" />
+                    </div>
                 </Button>
               </ColorPalette>
             </TooltipTrigger>
@@ -320,11 +314,11 @@ export function SimpleToolbar({
 
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" onClick={onExport}>
-                <FileDown className="w-4 h-4" />
-              </Button>
+                <Button variant="ghost" size="icon" onClick={onSave}>
+                  <FileDown className="w-4 h-4" />
+                </Button>
             </TooltipTrigger>
-            <TooltipContent>Export</TooltipContent>
+              <TooltipContent>Save</TooltipContent>
           </Tooltip>
         </div>
       </div>

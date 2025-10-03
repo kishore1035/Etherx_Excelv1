@@ -21,7 +21,7 @@ import { GradebookGuruGame } from "./GradebookGuruGame";
 import { AchievementsPage } from "./AchievementsPage";
 import { BadgeNotification } from "./BadgeNotification";
 import { LearningStreak } from "./LearningStreak";
-import logoImage from "figma:asset/14bd33c00fb18a1e46e6fbec8038e908490efbfd.png";
+import logoImage from "../assets/14bd33c00fb18a1e46e6fbec8038e908490efbfd.png";
 import { Button } from "./ui/button";
 import { Avatar, AvatarFallback } from "./ui/avatar";
 import {
@@ -50,7 +50,7 @@ import {
 } from "./ui/dropdown-menu";
 import { Badge } from "./ui/badge";
 import { Sheet, Cell, User } from "../types/spreadsheet";
-import { toast } from "sonner@2.0.3";
+import { toast } from "sonner";
 import { parseFormula } from "../utils/formulaParser";
 import { exportToCSV, exportToJSON, exportToPDF, exportToXLSX, saveToLocalStorage, loadFromLocalStorage } from "../utils/exportImport";
 
@@ -127,7 +127,7 @@ export function SimplifiedSpreadsheetApp({ user, onLogout, onBackToHome, theme, 
   useEffect(() => {
     if (sheets.length > 0) {
       const timer = setTimeout(() => {
-        saveToLocalStorage({ sheets, activeSheetId });
+      saveToLocalStorage(sheets, activeSheetId);
         setIsSaving(true);
         setTimeout(() => setIsSaving(false), 1000);
       }, 2000);
@@ -237,6 +237,7 @@ export function SimplifiedSpreadsheetApp({ user, onLogout, onBackToHome, theme, 
     newCells.set(selectedCell, {
       ...existingCell,
       ...formatting,
+      value: ("value" in existingCell ? (existingCell as Cell).value : "")
     });
 
     setSheets((prev) =>
@@ -311,10 +312,47 @@ export function SimplifiedSpreadsheetApp({ user, onLogout, onBackToHome, theme, 
     setShowSaveDialog(true);
   };
 
-  const handleSaveAs = (newFilename: string) => {
+  const handleSaveAs = async (newFilename: string) => {
     setFilename(newFilename);
-    saveToLocalStorage({ sheets, activeSheetId });
-    toast.success(`Saved as "${newFilename}"`);
+    // If user is logged in, save to backend
+    if (user && user.token) {
+      try {
+        const sheetToSave = sheets.find(s => s.id === activeSheetId);
+        if (!sheetToSave) throw new Error("No active sheet to save");
+        const payload = {
+          name: newFilename,
+          data: { cells: Array.from(sheetToSave.cells.entries()) }
+        };
+        // If sheet has a backend ID, update, else create
+        const url = sheetToSave._id
+          ? `/api/spreadsheets/${sheetToSave._id}`
+          : `/api/spreadsheets`;
+        const method = sheetToSave._id ? "PUT" : "POST";
+        const res = await fetch(url, {
+          method,
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${user.token}`
+          },
+          body: JSON.stringify(payload)
+        });
+        if (!res.ok) throw new Error("Failed to save to backend");
+        const savedSheet = await res.json();
+        // Update local sheet with backend ID if new
+        if (!sheetToSave._id && savedSheet._id) {
+          setSheets(prev => prev.map(s =>
+            s.id === sheetToSave.id ? { ...s, _id: savedSheet._id } : s
+          ));
+        }
+        toast.success(`Saved to cloud as "${newFilename}"`);
+      } catch (err) {
+        toast.error("Cloud save failed, saving locally.");
+        saveToLocalStorage(sheets, activeSheetId);
+      }
+    } else {
+      saveToLocalStorage(sheets, activeSheetId);
+      toast.success(`Saved locally as "${newFilename}"`);
+    }
   };
 
   const handleExport = (format: 'csv' | 'xlsx' | 'pdf' | 'json') => {
@@ -322,16 +360,16 @@ export function SimplifiedSpreadsheetApp({ user, onLogout, onBackToHome, theme, 
 
     switch (format) {
       case 'csv':
-        exportToCSV(activeSheet.cells, activeSheet.name);
+        exportToCSV(activeSheet);
         break;
       case 'xlsx':
-        exportToXLSX(sheets, activeSheet.name);
+        exportToXLSX(activeSheet);
         break;
       case 'pdf':
-        exportToPDF(activeSheet.cells, activeSheet.name);
+        exportToPDF(activeSheet);
         break;
       case 'json':
-        exportToJSON({ sheets, activeSheetId }, activeSheet.name);
+        exportToJSON(sheets);
         break;
     }
 
@@ -444,7 +482,7 @@ export function SimplifiedSpreadsheetApp({ user, onLogout, onBackToHome, theme, 
       
       toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} calculated: ${result}`);
     } else if (action === "chart") {
-      toast.success(`${type?.charAt(0).toUpperCase() + type?.slice(1)} chart created from selection`);
+  toast.success(`${(type ?? "").charAt(0).toUpperCase() + (type ?? "").slice(1)} chart created from selection`);
     } else if (action === "format") {
       // Apply conditional formatting to the selected range
       const rangeCells = getRangeFromString(quickAnalysisRange);
@@ -466,7 +504,7 @@ export function SimplifiedSpreadsheetApp({ user, onLogout, onBackToHome, theme, 
         }
       });
       
-      toast.success(`${type?.charAt(0).toUpperCase() + type?.slice(1)} formatting applied`);
+  toast.success(`${(type ?? "").charAt(0).toUpperCase() + (type ?? "").slice(1)} formatting applied`);
     }
     
     setShowQuickAnalysis(false);
@@ -511,6 +549,7 @@ export function SimplifiedSpreadsheetApp({ user, onLogout, onBackToHome, theme, 
     newCells.set(cellId, {
       ...existingCell,
       ...formatting,
+      value: ("value" in existingCell ? (existingCell as Cell).value : "")
     });
 
     setSheets((prev) =>
@@ -544,7 +583,7 @@ export function SimplifiedSpreadsheetApp({ user, onLogout, onBackToHome, theme, 
 
           {/* Advanced Features Menu */}
           <AdvancedFeaturesMenu
-            // onAIChatbot removed
+            onAIChatbot={() => {}}
             onPowerQuery={() => setShowDataTransformation(true)}
             onDataModel={() => setShowDataModel(true)}
             onPivotTable={() => setShowPivotBuilder(true)}
